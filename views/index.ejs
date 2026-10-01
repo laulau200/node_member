@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en" class="dark scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PULSE.RC | Protected Member Portal & Express Server</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        pulse: {
+                            crimson: '#FF2A5F',
+                            yellow: '#FFEE00',
+                            cyan: '#00F0FF',
+                            dark: '#080C14',
+                            panel: '#0F172A',
+                            card: '#1E293B',
+                            border: '#334155',
+                            muted: '#94A3B8'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        .glow-crimson { filter: drop-shadow(0 0 12px rgba(255, 42, 95, 0.4)); }
+        .glow-yellow { filter: drop-shadow(0 0 12px rgba(255, 238, 0, 0.4)); }
+        .glow-cyan { filter: drop-shadow(0 0 12px rgba(0, 240, 255, 0.4)); }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #080C14; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #FF2A5F; }
+
+        .tab-btn.active {
+            background-color: #1E293B;
+            color: #FFEE00;
+            border-bottom: 2px solid #FFEE00;
+        }
+
+        .filter-btn.active {
+            background-color: #FF2A5F;
+            color: #FFFFFF;
+            border-color: #FF2A5F;
+        }
+    </style>
+</head>
+<body class="bg-pulse-dark text-slate-100 font-sans min-h-screen flex flex-col selection:bg-pulse-crimson selection:text-white">
+
+    <header class="bg-slate-900/90 backdrop-blur-md border-b border-pulse-border sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+            <!-- Brand -->
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-pulse-crimson to-pulse-yellow flex items-center justify-center text-pulse-dark font-black text-lg shadow-lg">
+                    <i class="fa-solid fa-bolt"></i>
+                </div>
+                <div>
+                    <span class="text-xl font-black tracking-wider text-white">PULSE<span class="text-pulse-yellow">.RC</span></span>
+                    <span class="hidden sm:inline-block text-[10px] bg-pulse-crimson/20 text-pulse-crimson px-2 py-0.5 rounded font-mono font-bold uppercase ml-2 border border-pulse-crimson/30">Node.js Auth Stack</span>
+                </div>
+            </div>
+
+            <!-- View Mode Switcher -->
+            <div class="flex bg-pulse-dark p-1 rounded-xl border border-pulse-border text-xs font-semibold">
+                <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn active px-3 py-1.5 rounded-lg transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-gauge-high"></i>
+                    <span>Live /member App</span>
+                </button>
+                <button onclick="switchTab('server')" id="tab-server" class="tab-btn px-3 py-1.5 rounded-lg transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-server text-pulse-cyan"></i>
+                    <span>server.js</span>
+                </button>
+                <button onclick="switchTab('ejs')" id="tab-ejs" class="tab-btn px-3 py-1.5 rounded-lg transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-code text-pulse-yellow"></i>
+                    <span>views/member.ejs</span>
+                </button>
+            </div>
+
+            <!-- User Auth Simulator Widget -->
+            <div id="auth-simulator-status" class="flex items-center gap-2">
+                <!-- JS Inject Auth Controls -->
+            </div>
+        </div>
+    </header>
+
+    <main id="view-dashboard" class="flex-1 flex flex-col">
+        <!-- Auth Status Notification Banner -->
+        <div id="auth-banner" class="bg-pulse-crimson/10 border-b border-pulse-crimson/30 px-4 py-2 text-center text-xs font-mono text-pulse-crimson flex items-center justify-center gap-2">
+            <i class="fa-solid fa-shield-halved"></i>
+            <span id="auth-banner-text">Viewing as Authenticated Member: <strong>user@pulse.run</strong> (Role: Athlete)</span>
+        </div>
+
+        <!-- Hero Section -->
+        <section class="relative bg-slate-900 border-b border-pulse-border py-10 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
+                <div class="lg:col-span-2 space-y-4">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pulse-yellow/10 border border-pulse-yellow/30 text-xs font-mono text-pulse-yellow font-bold">
+                        <i class="fa-solid fa-fire text-pulse-crimson"></i>
+                        <span>OCTOBER MARATHON BUILD - WEEK 6 OF 12</span>
+                    </div>
+                    <h1 class="text-3xl sm:text-5xl font-black tracking-tight text-white uppercase">
+                        WELCOME BACK, <span class="text-transparent bg-clip-text bg-gradient-to-r from-pulse-yellow via-white to-pulse-crimson" id="hero-user-name">ALEX RIVERA</span>
+                    </h1>
+                    <p class="text-slate-300 text-sm sm:text-base max-w-2xl leading-relaxed">
+                        Your personalized squad portal is loaded with this week's workout assignments, route GPX files, recovery nutrition guides, and overall standings.
+                    </p>
+                    
+                    <div class="flex flex-wrap gap-3 pt-2">
+                        <a href="#results" class="bg-pulse-crimson hover:bg-rose-600 text-white font-bold px-5 py-2.5 rounded-xl text-xs uppercase tracking-wider transition shadow-lg shadow-pulse-crimson/20 flex items-center gap-2">
+                            <i class="fa-solid fa-trophy"></i> Check Team Leaderboard
+                        </a>
+                        <a href="#videos" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-pulse-border font-bold px-5 py-2.5 rounded-xl text-xs uppercase tracking-wider transition flex items-center gap-2">
+                            <i class="fa-solid fa-play"></i> Watch Track Preview
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Personal Athlete Quick Stats Card -->
+                <div class="bg-pulse-panel border border-pulse-border rounded-2xl p-6 relative overflow-hidden shadow-2xl">
+                    <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-pulse-crimson/10 rounded-full blur-2xl"></div>
+                    <div class="flex items-center justify-between border-b border-pulse-border/60 pb-4 mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-slate-800 border border-pulse-yellow/40 flex items-center justify-center font-bold text-pulse-yellow">
+                                AR
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-white" id="card-user-name">Alex Rivera</h4>
+                                <span class="text-[10px] font-mono text-pulse-cyan uppercase font-bold" id="card-user-tier">PRO ATHLETE MEMBER</span>
+                            </div>
+                        </div>
+                        <span class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-mono px-2 py-1 rounded-full uppercase">Active</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 text-center">
+                        <div class="bg-pulse-dark/60 p-3 rounded-xl border border-pulse-border/40">
+                            <span class="text-[10px] text-slate-400 uppercase font-mono block">Weekly Distance</span>
+                            <span class="text-xl font-black text-pulse-yellow font-mono">68.4 KM</span>
+                        </div>
+                        <div class="bg-pulse-dark/60 p-3 rounded-xl border border-pulse-border/40">
+                            <span class="text-[10px] text-slate-400 uppercase font-mono block">Avg Pace</span>
+                            <span class="text-xl font-black text-pulse-cyan font-mono">3:52 /km</span>
+                        </div>
+                        <div class="bg-pulse-dark/60 p-3 rounded-xl border border-pulse-border/40">
+                            <span class="text-[10px] text-slate-400 uppercase font-mono block">Squad Rank</span>
+                            <span class="text-xl font-black text-pulse-crimson font-mono">#2 Overall</span>
+                        </div>
+                        <div class="bg-pulse-dark/60 p-3 rounded-xl border border-pulse-border/40">
+                            <span class="text-[10px] text-slate-400 uppercase font-mono block">Next Key Event</span>
+                            <span class="text-xs font-bold text-white mt-1 block">Autumn 10K Glow</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="news" class="py-12 border-b border-pulse-border bg-pulse-dark">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 gap-2">
+                    <div>
+                        <div class="text-xs font-mono text-pulse-crimson font-bold uppercase tracking-widest">Updates & Events</div>
+                        <h2 class="text-2xl font-black text-white">SQUAD ANNOUNCEMENTS</h2>
+                    </div>
+                    <span class="text-xs text-slate-400 font-mono">Updated today at 08:30 AM</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="news-container">
+                    <!-- Dynamic rendering via JS -->
+                </div>
+            </div>
+        </section>
+
+        <section id="advice" class="py-12 border-b border-pulse-border bg-slate-900/60">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
+                    <div>
+                        <div class="text-xs font-mono text-pulse-yellow font-bold uppercase tracking-widest">Endurance Methodology</div>
+                        <h2 class="text-2xl font-black text-white">COACHING ADVICE &amp; GUIDES</h2>
+                    </div>
+                    
+                    <!-- Category Filters -->
+                    <div class="flex flex-wrap gap-2 text-xs font-bold" id="advice-filters">
+                        <button onclick="filterAdvice('all')" class="filter-btn active px-3 py-1.5 rounded-lg border border-pulse-border bg-slate-800 text-slate-300 transition">All</button>
+                        <button onclick="filterAdvice('Nutrition')" class="filter-btn px-3 py-1.5 rounded-lg border border-pulse-border bg-slate-800 text-slate-300 transition">Nutrition</button>
+                        <button onclick="filterAdvice('Pacing')" class="filter-btn px-3 py-1.5 rounded-lg border border-pulse-border bg-slate-800 text-slate-300 transition">Pacing</button>
+                        <button onclick="filterAdvice('Recovery')" class="filter-btn px-3 py-1.5 rounded-lg border border-pulse-border bg-slate-800 text-slate-300 transition">Recovery</button>
+                        <button onclick="filterAdvice('Gear')" class="filter-btn px-3 py-1.5 rounded-lg border border-pulse-border bg-slate-800 text-slate-300 transition">Gear</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="advice-container">
+                    <!-- Dynamic advice injected here -->
+                </div>
+            </div>
+        </section>
+
+        <section id="videos" class="py-12 border-b border-pulse-border bg-pulse-dark">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="mb-8">
+                    <div class="text-xs font-mono text-pulse-cyan font-bold uppercase tracking-widest">Route Analysis</div>
+                    <h2 class="text-2xl font-black text-white">RUN VIDEO REVIEWS &amp; GPX MAPS</h2>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="video-container">
+                    <!-- Dynamic Videos Injected -->
+                </div>
+            </div>
+        </section>
+
+        <section id="results" class="py-12 border-b border-pulse-border bg-slate-900/60">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                    <div>
+                        <div class="text-xs font-mono text-pulse-crimson font-bold uppercase tracking-widest">Official Timing</div>
+                        <h2 class="text-2xl font-black text-white">LAST COMPETITION RESULTS</h2>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-slate-400 font-mono">Distance:</span>
+                        <select id="distance-filter" onchange="renderResults()" class="bg-pulse-dark border border-pulse-border text-xs rounded-lg px-3 py-1.5 font-bold text-white focus:outline-none focus:border-pulse-crimson">
+                            <option value="All">All Distances</option>
+                            <option value="Half-Marathon">Half-Marathon</option>
+                            <option value="10K">10K</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="bg-pulse-panel rounded-2xl border border-pulse-border overflow-hidden shadow-xl">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-300">
+                            <thead class="bg-slate-950 text-slate-400 font-mono font-bold uppercase border-b border-pulse-border">
+                                <tr>
+                                    <th class="p-4">Rank</th>
+                                    <th class="p-4">Athlete Name</th>
+                                    <th class="p-4">Event</th>
+                                    <th class="p-4">Official Time</th>
+                                    <th class="p-4">Pace</th>
+                                    <th class="p-4">Category</th>
+                                    <th class="p-4 text-center">Personal Best</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-pulse-border/50" id="results-table-body">
+                                <!-- Dynamic Leaderboard Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer id="coaches" class="py-12 bg-pulse-dark text-slate-400">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="mb-8">
+                    <div class="text-xs font-mono text-pulse-yellow font-bold uppercase tracking-widest">Squad Support</div>
+                    <h2 class="text-2xl font-black text-white">MEET THE COACHES</h2>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12" id="coaches-container">
+                    <!-- Dynamic Coaches Cards -->
+                </div>
+
+                <div class="pt-8 border-t border-pulse-border/60 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 gap-4">
+                    <p>&copy; 2026 PULSE Running Team. All rights reserved. Express & EJS Architecture.</p>
+                    <div class="flex items-center gap-4">
+                        <a href="#news" class="hover:text-slate-300">News</a>
+                        <a href="#advice" class="hover:text-slate-300">Advice</a>
+                        <a href="#videos" class="hover:text-slate-300">Videos</a>
+                        <a href="#results" class="hover:text-slate-300">Results</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </main>
+
+    <div id="view-server" class="hidden flex-1 p-4 sm:p-6 lg:p-8 bg-pulse-dark">
+        <div class="max-w-7xl mx-auto space-y-4">
+            <div class="flex justify-between items-center bg-slate-900 p-4 rounded-xl border border-pulse-border">
+                <div>
+                    <h3 class="text-sm font-bold text-white font-mono"><i class="fa-solid fa-server text-pulse-cyan mr-2"></i>server.js</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Express Node.js application backend with route protection middleware (`requireAuth`) &amp; session handling.</p>
+                </div>
+                <button onclick="copyCode('code-server-text')" class="bg-slate-800 hover:bg-slate-700 text-xs px-3 py-1.5 rounded-lg border border-pulse-border text-slate-200 transition flex items-center gap-1.5">
+                    <i class="fa-regular fa-copy"></i> Copy Code
+                </button>
+            </div>
+            <pre class="bg-slate-950 p-6 rounded-xl border border-pulse-border text-xs font-mono text-slate-300 overflow-x-auto leading-relaxed"><code id="code-server-text">const express = require('express');
+const session = require('express-session');
+const path = require('path');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Set EJS Template Engine
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+// Parse incoming request bodies
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Configure Express Session Management
+app.use(
+  session({
+    secret: 'pulse-running-squad-secret-key-2026',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { maxAge: 1000 * 60 * 60 * 24 } // 24 hours duration
+  })
+);
+
+// Mock User Database
+const USERS = [
+  { 
+    id: 1, 
+    email: 'user@pulse.run', 
+    password: 'runner2026', 
+    name: 'Alex Rivera', 
+    role: 'member', 
+    tier: 'Pro Athlete Member',
+    stats: { weeklyKm: 68.4, pace: '3:52 /km', rank: '#2 Overall' } 
+  },
+  { 
+    id: 2, 
+    email: 'coach@pulse.run', 
+    password: 'coach2026', 
+    name: 'Sarah Jenkins', 
+    role: 'coach', 
+    tier: 'Head Coach',
+    stats: { weeklyKm: 42.0, pace: '4:15 /km', rank: '#1 Coach' } 
+  }
+];
+
+// Authentication Guard Middleware
+function requireAuth(req, res, next) {
+  if (!req.session || !req.session.user) {
+    // Redirect unauthenticated guests directly to login
+    return res.redirect('/login');
+  }
+  next();
+}
+
+// Role-Based Authorization Middleware for Coaches/Admins
+function requireCoach(req, res, next) {
+  if (!req.session.user || req.session.user.role !== 'coach') {
+    return res.status(403).send('Access Denied: Coach privilege required.');
+  }
+  next();
+}
+
+// Global Context Middleware (Injects User to EJS templates)
+app.use((req, res, next) => {
+  res.locals.currentUser = req.session.user || null;
+  next();
+});
+
+// Public Landing Page
+app.get('/', (req, res) => {
+  res.render('index', { user: req.session.user || null });
+});
+
+// Login Page GET Handler
+app.get('/login', (req, res) => {
+  if (req.session.user) {
+    return res.redirect('/member');
+  }
+  res.render('login', { error: null });
+});
+
+// Login POST Handler (Authenticates User)
+app.post('/login', (req, res) => {
+  const { email, password } = req.body;
+  const user = USERS.find(u => u.email === email && u.password === password);
+
+  if (!user) {
+    return res.status(401).render('login', { error: 'Invalid credentials. Please try user@pulse.run / runner2026' });
+  }
+
+  // Store user in session
+  req.session.user = {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    tier: user.tier,
+    stats: user.stats
+  };
+
+  res.redirect('/member');
+});
+
+// PROTECTED ROUTE: Member Portal Page
+app.get('/member', requireAuth, (req, res) => {
+  // Pass dynamic datasets to view template
+  res.render('member', {
+    user: req.session.user,
+    news: newsData,
+    advices: adviceData,
+    videos: videoData,
+    results: resultsData,
+    coaches: coachesData,
+    pageTitle: 'PULSE Member Portal'
+  });
+});
+
+// Logout Route
+app.get('/logout', (req, res) => {
+  req.session.destroy(err => {
+    res.clearCookie('connect.sid');
+    res.redirect('/login');
+  });
+});
+
+app.listen(PORT, () => {
+  console.log(`⚡ PULSE Running Express App running on http://localhost:${PORT}`);
+});</code></pre>
+        </div>
+    </div>
+
+    <div id="view-ejs" class="hidden flex-1 p-4 sm:p-6 lg:p-8 bg-pulse-dark">
+        <div class="max-w-7xl mx-auto space-y-4">
+            <div class="flex justify-between items-center bg-slate-900 p-4 rounded-xl border border-pulse-border">
+                <div>
+                    <h3 class="text-sm font-bold text-white font-mono"><i class="fa-solid fa-code text-pulse-yellow mr-2"></i>views/member.ejs</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">EJS Template rendering dynamic user object, arrays, and conditional user badges.</p>
+                </div>
+                <button onclick="copyCode('code-ejs-text')" class="bg-slate-800 hover:bg-slate-700 text-xs px-3 py-1.5 rounded-lg border border-pulse-border text-slate-200 transition flex items-center gap-1.5">
+                    <i class="fa-regular fa-copy"></i> Copy Code
+                </button>
+            </div>
+            <pre class="bg-slate-950 p-6 rounded-xl border border-pulse-border text-xs font-mono text-slate-300 overflow-x-auto leading-relaxed"><code id="code-ejs-text">&lt;!DOCTYPE html&gt;
+&lt;html lang="en" class="dark scroll-smooth"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;&lt;%= pageTitle %&gt;&lt;/title&gt;
+    &lt;script src="https://cdn.tailwindcss.com"&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body class="bg-slate-950 text-slate-100 min-h-screen"&gt;
+
+    &lt;!-- Top Navigation Bar --&gt;
+    &lt;nav class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50"&gt;
+        &lt;div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between"&gt;
+            &lt;div class="flex items-center gap-3"&gt;
+                &lt;span class="text-xl font-black text-white"&gt;PULSE&lt;span class="text-yellow-400"&gt;.RC&lt;/span&gt;&lt;/span&gt;
+            &lt;/div&gt;
+
+            &lt;div class="flex items-center gap-4"&gt;
+                &lt;div class="text-right text-xs"&gt;
+                    &lt;span class="block font-bold text-white"&gt;&lt;%= user.name %&gt;&lt;/span&gt;
+                    &lt;span class="block text-[10px] text-yellow-400 uppercase font-mono"&gt;&lt;%= user.tier %&gt;&lt;/span&gt;
+                &lt;/div&gt;
+                &lt;a href="/logout" class="bg-rose-600 hover:bg-rose-500 text-white text-xs px-3 py-1.5 rounded font-bold uppercase"&gt;Logout&lt;/a&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+    &lt;/nav&gt;
+
+    &lt;!-- Protected Hero Dashboard Section --&gt;
+    &lt;header class="py-10 bg-slate-900/50 border-b border-slate-800"&gt;
+        &lt;div class="max-w-7xl mx-auto px-4"&gt;
+            &lt;h1 class="text-3xl font-black uppercase text-white"&gt;
+                WELCOME BACK, &lt;span class="text-yellow-400"&gt;&lt;%= user.name %&gt;&lt;/span&gt;
+            &lt;/h1&gt;
+            &lt;p class="text-slate-400 text-sm mt-1"&gt;Logged in as: &lt;%= user.email %&gt; (&lt;%= user.role.toUpperCase() %&gt;)&lt;/p&gt;
+            
+            &lt;div class="grid grid-cols-3 gap-4 mt-6 max-w-lg text-center font-mono"&gt;
+                &lt;div class="bg-slate-900 p-3 rounded-lg border border-slate-800"&gt;
+                    &lt;span class="text-[10px] text-slate-500 block uppercase"&gt;Weekly Km&lt;/span&gt;
+                    &lt;span class="text-lg font-bold text-yellow-400"&gt;&lt;%= user.stats.weeklyKm %&gt; KM&lt;/span&gt;
+                &lt;/div&gt;
+                &lt;div class="bg-slate-900 p-3 rounded-lg border border-slate-800"&gt;
+                    &lt;span class="text-[10px] text-slate-500 block uppercase"&gt;Target Pace&lt;/span&gt;
+                    &lt;span class="text-lg font-bold text-cyan-400"&gt;&lt;%= user.stats.pace %&gt;&lt;/span&gt;
+                &lt;/div&gt;
+                &lt;div class="bg-slate-900 p-3 rounded-lg border border-slate-800"&gt;
+                    &lt;span class="text-[10px] text-slate-500 block uppercase"&gt;Squad Rank&lt;/span&gt;
+                    &lt;span class="text-lg font-bold text-rose-500"&gt;&lt;%= user.stats.rank %&gt;&lt;/span&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+    &lt;/header&gt;
+
+    &lt;!-- News Section --&gt;
+    &lt;section class="py-10 border-b border-slate-800 max-w-7xl mx-auto px-4"&gt;
+        &lt;h2 class="text-xl font-bold mb-6 text-white uppercase"&gt;Member News&lt;/h2&gt;
+        &lt;div class="grid grid-cols-1 md:grid-cols-3 gap-6"&gt;
+            &lt;% news.forEach(function(item) { %&gt;
+                &lt;div class="bg-slate-900 rounded-xl border border-slate-800 p-4"&gt;
+                    &lt;span class="text-[10px] font-mono text-yellow-400 font-bold"&gt;&lt;%= item.category %&gt;&lt;/span&gt;
+                    &lt;h3 class="font-bold text-white mt-1"&gt;&lt;%= item.title %&gt;&lt;/h3&gt;
+                    &lt;p class="text-xs text-slate-400 mt-2"&gt;&lt;%= item.snippet %&gt;&lt;/p&gt;
+                &lt;/div&gt;
+            &lt;% }); %&gt;
+        &lt;/div&gt;
+    &lt;/section&gt;
+
+    &lt;!-- Results Table --&gt;
+    &lt;section class="py-10 max-w-7xl mx-auto px-4"&gt;
+        &lt;h2 class="text-xl font-bold mb-6 text-white uppercase"&gt;Recent Results&lt;/h2&gt;
+        &lt;table class="w-full text-left text-xs bg-slate-900 rounded-xl overflow-hidden"&gt;
+            &lt;thead class="bg-slate-950 text-slate-400 font-mono uppercase"&gt;
+                &lt;tr&gt;
+                    &lt;th class="p-3"&gt;Rank&lt;/th&gt;
+                    &lt;th class="p-3"&gt;Athlete&lt;/th&gt;
+                    &lt;th class="p-3"&gt;Distance&lt;/th&gt;
+                    &lt;th class="p-3"&gt;Time&lt;/th&gt;
+                &lt;/tr&gt;
+            &lt;/thead&gt;
+            &lt;tbody class="divide-y divide-slate-800"&gt;
+                &lt;% results.forEach(function(r) { %&gt;
+                    &lt;tr class="&lt;%= r.name === user.name ? 'bg-yellow-400/10 font-bold' : '' %&gt;"&gt;
+                        &lt;td class="p-3 text-yellow-400"&gt;#&lt;%= r.rank %&gt;&lt;/td&gt;
+                        &lt;td class="p-3 font-bold text-white"&gt;&lt;%= r.name %&gt;&lt;/td&gt;
+                        &lt;td class="p-3 text-cyan-400"&gt;&lt;%= r.distance %&gt;&lt;/td&gt;
+                        &lt;td class="p-3 font-mono text-rose-400"&gt;&lt;%= r.time %&gt;&lt;/td&gt;
+                    &lt;/tr&gt;
+                &lt;% }); %&gt;
+            &lt;/tbody&gt;
+        &lt;/table&gt;
+    &lt;/section&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+        </div>
+    </div>
+
+    <div id="video-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-pulse-panel border border-pulse-border w-full max-w-3xl rounded-2xl overflow-hidden shadow-2xl relative">
+            <div class="p-4 bg-slate-900 border-b border-pulse-border flex justify-between items-center">
+                <h4 id="modal-video-title" class="font-bold text-white text-sm">Video Route Preview</h4>
+                <button onclick="closeVideoModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="aspect-video bg-black flex items-center justify-center relative">
+                <img id="modal-video-poster" src="" class="w-full h-full object-cover opacity-60">
+                <div class="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                    <div class="w-16 h-16 rounded-full bg-pulse-crimson flex items-center justify-center text-white text-2xl shadow-xl animate-pulse">
+                        <i class="fa-solid fa-play ml-1"></i>
+                    </div>
+                    <span class="text-xs font-mono text-white bg-black/70 px-3 py-1 rounded-full border border-pulse-border">Simulating Stream Route Playback</span>
+                </div>
+            </div>
+            <div class="p-4 bg-slate-900 text-xs text-slate-300 flex justify-between items-center font-mono">
+                <span>Elevation profile &amp; GPX synced</span>
+                <button onclick="closeVideoModal()" class="bg-slate-800 px-4 py-1.5 rounded-lg text-white font-bold">Close Preview</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock Session State
+        let currentUser = {
+            authenticated: true,
+            email: 'user@pulse.run',
+            name: 'Alex Rivera',
+            role: 'member',
+            tier: 'Pro Athlete Member',
+            stats: { weeklyKm: 68.4, pace: '3:52 /km', rank: '#2 Overall' }
+        };
+
+        // Mock Datasets
+        const newsData = [
+            {
+                id: 1,
+                title: 'Autumn Marathon Prep Block Starts Saturday',
+                category: 'Training',
+                date: 'OCT 05, 2026',
+                readTime: '3 min read',
+                image: 'https://images.unsplash.com/photo-1452626038306-9aae5e071dd3?auto=format&fit=crop&w=600&q=80',
+                snippet: 'Structured 10-week build program featuring weekly long workout runs and intra-race fueling practice.'
+            },
+            {
+                id: 2,
+                title: 'PULSE 10K Glow Night Race Details',
+                category: 'Event',
+                date: 'OCT 18, 2026',
+                readTime: '2 min read',
+                image: 'https://images.unsplash.com/photo-1530549387789-4c1017266635?auto=format&fit=crop&w=600&q=80',
+                snippet: 'Glowsticks, live DJs along the river route, and post-race refuel party at squad HQ.'
+            },
+            {
+                id: 3,
+                title: 'Podium Clean Sweep at City Half Marathon',
+                category: 'Race Report',
+                date: 'SEP 22, 2026',
+                readTime: '5 min read',
+                image: 'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=600&q=80',
+                snippet: 'PULSE runners dominated both men\'s and women\'s divisions in last weekend\'s flagship race.'
+            }
+        ];
+
+        const adviceData = [
+            {
+                id: 1,
+                title: 'Carbo-Loading & Intra-Race Hydrogel Timing',
+                category: 'Nutrition',
+                icon: 'fa-wheat-awn',
+                text: 'Target 7-9g carbs per kg body weight 36h before race day. Take fructose/glucose hydrogels every 25-30 mins during efforts over 75 mins.'
+            },
+            {
+                id: 2,
+                title: 'Negative Splits & Zone 2 Base Building',
+                category: 'Pacing',
+                icon: 'fa-gauge-high',
+                text: 'Keep 80% of weekly volume strictly below aerobic threshold (Zone 2) to increase capillary density without incurring neuromuscular fatigue.'
+            },
+            {
+                id: 3,
+                title: 'Achilles & Plantar Fascia Prehab Protocols',
+                category: 'Recovery',
+                icon: 'fa-kit-medical',
+                text: 'Perform 3x15 heavy eccentric calf drops twice a week to strengthen foot tendons and prevent overuse injuries during peak volume weeks.'
+            },
+            {
+                id: 4,
+                title: 'Carbon Plated Shoe Rotation Strategy',
+                category: 'Gear',
+                icon: 'fa-shoe-prints',
+                text: 'Reserve stiff carbon racers for specific race-pace workouts to preserve shoe foam pop and minimize joint stress during recovery runs.'
+            }
+        ];
+
+        const videoData = [
+            {
+                id: 1,
+                title: 'River Trail 15K Tempo Loop Recon',
+                duration: '08:45',
+                distance: '15.2 km',
+                elevation: '+140m',
+                pace: '3:45 /km',
+                thumbnail: 'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=600&q=80'
+            },
+            {
+                id: 2,
+                title: 'Track Tuesday: 800m Interval Breakdown',
+                duration: '05:20',
+                distance: '8.0 km Total',
+                elevation: '+0m',
+                pace: '2:55 /km',
+                thumbnail: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=600&q=80'
+            },
+            {
+                id: 3,
+                title: 'Alpine Ridge Singletrack POV Run',
+                duration: '12:10',
+                distance: '28.5 km',
+                elevation: '+1120m',
+                pace: '5:10 /km',
+                thumbnail: 'https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?auto=format&fit=crop&w=600&q=80'
+            }
+        ];
+
+        const resultsData = [
+            { rank: 1, name: 'David Kiptoo', distance: 'Half-Marathon', time: '1:04:12', pace: '3:02 /km', cat: 'M Open', pb: true },
+            { rank: 2, name: 'Alex Rivera', distance: 'Half-Marathon', time: '1:07:45', pace: '3:12 /km', cat: 'M Open', pb: true },
+            { rank: 3, name: 'Sophia Chen', distance: 'Half-Marathon', time: '1:12:08', pace: '3:25 /km', cat: 'F Open', pb: true },
+            { rank: 4, name: 'Liam O\'Connor', distance: '10K', time: '30:15', pace: '3:01 /km', cat: 'M 30-34', pb: true },
+            { rank: 5, name: 'Emma Watson', distance: '10K', time: '33:40', pace: '3:22 /km', cat: 'F 25-29', pb: false }
+        ];
+
+        const coachesData = [
+            { name: 'Sarah Jenkins', role: 'Head Coach', email: 'sarah.jenkins@pulse.run', image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80', desc: '5x Marathon finisher & IAAF Level 3 Endurance specialist.' },
+            { name: 'Marcus Vance', role: 'Marathon & Ultra', email: 'marcus.vance@pulse.run', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80', desc: 'Mountain ultra specialist with focus on pacing & strain recovery.' },
+            { name: 'Elena Rostova', role: 'Track & Speedwork', email: 'elena.rostova@pulse.run', image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80', desc: 'Biomechanics expert specializing in running economy drills.' },
+            { name: 'David Miller', role: 'Academy Coach', email: 'david.miller@pulse.run', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80', desc: 'Developing new athletes and structured 5K to 10K progressions.' }
+        ];
+
+        function initApp() {
+            renderAuthWidget();
+            renderNews();
+            filterAdvice('all');
+            renderVideos();
+            renderResults();
+            renderCoaches();
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+
+            document.getElementById('view-dashboard').classList.add('hidden');
+            document.getElementById('view-server').classList.add('hidden');
+            document.getElementById('view-ejs').classList.add('hidden');
+
+            document.getElementById('view-' + tabId).classList.remove('hidden');
+        }
+
+        function renderAuthWidget() {
+            const container = document.getElementById('auth-simulator-status');
+            const bannerText = document.getElementById('auth-banner-text');
+
+            if (currentUser.authenticated) {
+                container.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-mono text-pulse-yellow font-bold hidden sm:inline">${currentUser.name}</span>
+                        <button onclick="toggleAuth(false)" class="bg-pulse-crimson/20 hover:bg-pulse-crimson text-pulse-crimson hover:text-white border border-pulse-crimson/40 px-3 py-1 rounded-lg text-xs font-bold transition">
+                            Simulate Logout
+                        </button>
+                    </div>
+                `;
+                bannerText.innerHTML = `Viewing Protected Member Dashboard as <strong>${currentUser.email}</strong> (${currentUser.tier})`;
+                document.getElementById('hero-user-name').innerText = currentUser.name;
+                document.getElementById('card-user-name').innerText = currentUser.name;
+                document.getElementById('card-user-tier').innerText = currentUser.tier;
+            } else {
+                container.innerHTML = `
+                    <button onclick="toggleAuth(true)" class="bg-pulse-yellow hover:bg-yellow-300 text-pulse-dark px-3 py-1 rounded-lg text-xs font-black uppercase transition">
+                        Simulate Member Login
+                    </button>
+                `;
+                bannerText.innerHTML = `<span class="text-rose-400 font-bold">UNAUTHENTICATED ACCESS SIMULATED: Express 'requireAuth' middleware will redirect /member requests to /login.</span>`;
+            }
+        }
+
+        function toggleAuth(authenticated) {
+            currentUser.authenticated = authenticated;
+            renderAuthWidget();
+            if (!authenticated) {
+                // If unauthenticated, show prompt
+                setTimeout(() => {
+                    alert("Middleware Redirect Triggered!\n\nUnauthenticated access to '/member' detected. Express server calls res.redirect('/login').");
+                }, 100);
+            }
+        }
+
+        function renderNews() {
+            const container = document.getElementById('news-container');
+            container.innerHTML = newsData.map(item => `
+                <div class="bg-pulse-panel rounded-2xl border border-pulse-border overflow-hidden flex flex-col justify-between hover:border-pulse-crimson/50 transition">
+                    <div>
+                        <div class="relative h-40 overflow-hidden">
+                            <img src="${item.image}" class="w-full h-full object-cover">
+                            <span class="absolute top-3 left-3 bg-pulse-dark/80 backdrop-blur-md border border-pulse-border text-pulse-yellow text-[10px] font-mono px-2 py-0.5 rounded uppercase font-bold">
+                                ${item.category}
+                            </span>
+                        </div>
+                        <div class="p-5">
+                            <h3 class="text-base font-bold text-white">${item.title}</h3>
+                            <p class="text-xs text-slate-400 mt-2 leading-relaxed">${item.snippet}</p>
+                        </div>
+                    </div>
+                    <div class="px-5 pb-5 pt-0 text-[10px] text-slate-500 font-mono flex justify-between border-t border-pulse-border/40 mt-2 pt-3">
+                        <span><i class="fa-regular fa-calendar mr-1"></i>${item.date}</span>
+                        <span><i class="fa-regular fa-clock mr-1"></i>${item.readTime}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterAdvice(cat) {
+            // Update filter buttons UI
+            const buttons = document.querySelectorAll('#advice-filters button');
+            buttons.forEach(btn => {
+                if (btn.innerText.toLowerCase() === cat.toLowerCase() || (cat === 'all' && btn.innerText === 'All')) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            const filtered = cat === 'all' ? adviceData : adviceData.filter(a => a.category.toLowerCase() === cat.toLowerCase());
+            const container = document.getElementById('advice-container');
+
+            container.innerHTML = filtered.map(adv => `
+                <div class="bg-pulse-panel p-6 rounded-2xl border border-pulse-border relative overflow-hidden">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-8 h-8 rounded-lg bg-pulse-cyan/10 border border-pulse-cyan/30 flex items-center justify-center text-pulse-cyan text-xs">
+                            <i class="fa-solid ${adv.icon}"></i>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-mono text-pulse-cyan font-bold uppercase">${adv.category}</span>
+                            <h3 class="text-sm font-bold text-white">${adv.title}</h3>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-300 leading-relaxed">${adv.text}</p>
+                </div>
+            `).join('');
+        }
+
+        function renderVideos() {
+            const container = document.getElementById('video-container');
+            container.innerHTML = videoData.map(v => `
+                <div class="bg-pulse-panel rounded-2xl border border-pulse-border overflow-hidden group">
+                    <div class="relative h-44 cursor-pointer overflow-hidden" onclick="openVideoModal('${v.title}', '${v.thumbnail}')">
+                        <img src="${v.thumbnail}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300 opacity-80">
+                        <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
+                            <div class="w-12 h-12 rounded-full bg-pulse-crimson/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition">
+                                <i class="fa-solid fa-play ml-0.5"></i>
+                            </div>
+                        </div>
+                        <span class="absolute bottom-3 right-3 bg-black/80 text-white text-[10px] font-mono px-2 py-0.5 rounded border border-pulse-border">${v.duration}</span>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="text-sm font-bold text-white">${v.title}</h3>
+                        <div class="mt-3 grid grid-cols-3 text-center text-[10px] font-mono bg-pulse-dark p-2 rounded-xl border border-pulse-border">
+                            <div><span class="text-slate-500 block">DIST</span><span class="text-white font-bold">${v.distance}</span></div>
+                            <div><span class="text-slate-500 block">ELEV</span><span class="text-pulse-yellow font-bold">${v.elevation}</span></div>
+                            <div><span class="text-slate-500 block">PACE</span><span class="text-pulse-cyan font-bold">${v.pace}</span></div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderResults() {
+            const filter = document.getElementById('distance-filter').value;
+            const filtered = filter === 'All' ? resultsData : resultsData.filter(r => r.distance === filter);
+            const tbody = document.getElementById('results-table-body');
+
+            tbody.innerHTML = filtered.map(r => `
+                <tr class="${r.name === currentUser.name ? 'bg-pulse-yellow/10 font-bold border-l-2 border-pulse-yellow' : 'hover:bg-slate-900/40'}">
+                    <td class="p-4 font-mono font-bold text-pulse-yellow">#${r.rank}</td>
+                    <td class="p-4 font-bold text-white flex items-center gap-2">
+                        ${r.name}
+                        ${r.name === currentUser.name ? '<span class="bg-pulse-yellow text-pulse-dark text-[9px] font-black px-1.5 py-0.5 rounded">YOU</span>' : ''}
+                    </td>
+                    <td class="p-4 text-pulse-cyan font-semibold">${r.distance}</td>
+                    <td class="p-4 font-mono font-bold text-pulse-crimson">${r.time}</td>
+                    <td class="p-4 font-mono text-slate-400">${r.pace}</td>
+                    <td class="p-4 font-bold uppercase text-slate-400">${r.cat}</td>
+                    <td class="p-4 text-center">
+                        ${r.pb ? '<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] px-2 py-0.5 rounded font-mono font-bold">YES (PB)</span>' : '<span class="text-slate-600 text-[10px]">-</span>'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderCoaches() {
+            const container = document.getElementById('coaches-container');
+            container.innerHTML = coachesData.map(c => `
+                <div class="bg-pulse-panel p-5 rounded-2xl border border-pulse-border flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center gap-3 mb-3">
+                            <img src="${c.image}" class="w-10 h-10 rounded-xl object-cover border border-pulse-border">
+                            <div>
+                                <h3 class="text-sm font-bold text-white">${c.name}</h3>
+                                <span class="text-[10px] font-mono font-bold text-pulse-yellow uppercase">${c.role}</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-400 mb-4 leading-relaxed">${c.desc}</p>
+                    </div>
+                    <a href="mailto:${c.email}" class="inline-flex items-center justify-center gap-2 text-xs font-bold bg-pulse-dark text-slate-200 hover:text-pulse-yellow p-2 rounded-xl border border-pulse-border hover:border-pulse-yellow transition">
+                        <i class="fa-solid fa-envelope text-pulse-yellow"></i>
+                        <span>Contact Coach</span>
+                    </a>
+                </div>
+            `).join('');
+        }
+
+        function openVideoModal(title, poster) {
+            document.getElementById('modal-video-title').innerText = title;
+            document.getElementById('modal-video-poster').src = poster;
+            document.getElementById('video-modal').classList.remove('hidden');
+        }
+
+        function closeVideoModal() {
+            document.getElementById('video-modal').classList.add('hidden');
+        }
+
+        function copyCode(elementId) {
+            const text = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Code snippet copied to clipboard!");
+            }).catch(() => {
+                document.execCommand('copy');
+                alert("Code snippet copied to clipboard!");
+            });
+        }
+
+        // Initialize App on DOM Load
+        window.onload = initApp;
+    </script>
+</body>
+</html>

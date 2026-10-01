@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Log in</title>
+  <style>
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      background: #f4f6f8;
+      color: #222;
+      font-family: system-ui, sans-serif;
+    }
+
+    .login-card {
+      width: min(100% - 2rem, 24rem);
+      padding: 2rem;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgb(0 0 0 / 8%);
+    }
+
+    h1 {
+      margin-top: 0;
+    }
+
+    label {
+      display: block;
+      margin: 1rem 0 0.4rem;
+      font-weight: 600;
+    }
+
+    input {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #cbd1d8;
+      border-radius: 6px;
+      font: inherit;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 1.25rem;
+      padding: 0.8rem;
+      border: 0;
+      border-radius: 6px;
+      background: #2457d6;
+      color: #fff;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1946b8;
+    }
+
+    .error {
+      padding: 0.75rem;
+      border-radius: 6px;
+      background: #fff0f0;
+      color: #a11;
+    }
+  </style>
+</head>
+<body>
+  <main class="login-card">
+    <h1>Log in</h1>
+
+    <% if (typeof error !== "undefined" && error) { %>
+      <p class="error" role="alert"><%= error %></p>
+    <% } %>
+
+    <form action="/login" method="POST">
+      <% if (typeof csrfToken !== "undefined") { %>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <% } %>
+
+      <label for="email">Email</label>
+      <input
+        id="email"
+        name="email"
+        type="email"
+        autocomplete="username"
+        required
+      >
+
+      <label for="password">Password</label>
+      <input
+        id="password"
+        name="password"
+        type="password"
+        autocomplete="current-password"
+        required
+      >
+
+      <button type="submit">Log in</button>
+    </form>
+  </main>
+</body>
+</html>
